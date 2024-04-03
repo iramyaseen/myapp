@@ -1,31 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Pagination, PaginationItem, PaginationLink, Table } from "reactstrap";
-
+import { fetchproducts } from "./Redux/ProductSlice";
 function App() {
-  const [products, setProducts] = useState([]);
-
-  const fetchProducts = async (offset) => {
-    try {
-      const response = await fetch(
-        `https://api.escuelajs.co/api/v1/products?offset=0&limit=${offset}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
-      }
-      const data = await response.json();
-      setProducts(data);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.product.data);
 
   useEffect(() => {
-    fetchProducts(5);
+    dispatch(fetchproducts(5));
   }, []);
 
   const handlePageChange = (pageNumber) => {
     const offset = pageNumber * 5;
-    fetchProducts(offset);
+    dispatch(fetchproducts(offset));
   };
 
   return (
@@ -46,7 +33,6 @@ function App() {
             <th>Product Name</th>
             <th>Price</th>
             <th>Description</th>
-            <th>Image</th>
           </tr>
         </thead>
         <tbody>
@@ -56,9 +42,6 @@ function App() {
               <td>{product.title}</td>
               <td>{product.price}</td>
               <td>{product.description.slice(0, 40)}</td>
-              <td>
-                <img src={product.category?.image} alt="" width={100} />
-              </td>
             </tr>
           ))}
         </tbody>
