@@ -12,7 +12,7 @@ const productSlice = createSlice({
   },
 });
 
-export const { setproducts, setStatus } = productSlice.actions;
+export const { setproducts } = productSlice.actions;
 export default productSlice.reducer;
 
 export function fetchproducts(offset) {

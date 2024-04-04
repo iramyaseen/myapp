@@ -1,31 +1,53 @@
-import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Pagination, PaginationItem, PaginationLink, Table } from "reactstrap";
-import { fetchproducts } from "./Redux/ProductSlice";
+import React, { useEffect, useState } from "react";
+import { Table } from "reactstrap";
+
 function App() {
-  const dispatch = useDispatch();
-  const products = useSelector((state) => state.product.data);
+  const [products, setProducts] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    dispatch(fetchproducts(5));
-  }, []);
+    fetchProducts(offset);
+  }, [offset]);
 
-  const handlePageChange = (pageNumber) => {
-    const offset = pageNumber * 5;
-    dispatch(fetchproducts(offset));
+  useEffect(() => {
+    setOffset(0);
+    setHasMore(true);
+  }, [products]);
+
+  const fetchProducts = async (offset) => {
+    try {
+      const response = await fetch(
+        `https://api.escuelajs.co/api/v1/products?offset=${offset}&limit=5`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch products");
+      }
+      const data = await response.json();
+      setProducts((prevProducts) => [...prevProducts, ...data]);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    }
+  };
+
+  const handleScroll = (e) => {
+    const bottom =
+      e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+    if (bottom && hasMore) {
+      const newOffset = offset + 5;
+      setOffset(newOffset);
+    }
   };
 
   return (
-    <div style={{ padding: "30px" }}>
-      <Pagination>
-        {[1, 2, 3, 4, 5].map((pageNumber) => (
-          <PaginationItem key={pageNumber}>
-            <PaginationLink onClick={() => handlePageChange(pageNumber)}>
-              {pageNumber}
-            </PaginationLink>
-          </PaginationItem>
-        ))}
-      </Pagination>
+    <div
+      style={{
+        padding: "30px",
+        height: "300px",
+        overflowY: "auto",
+      }}
+      onScroll={handleScroll}
+    >
       <Table>
         <thead>
           <tr>
