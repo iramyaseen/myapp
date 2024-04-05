@@ -1,54 +1,57 @@
-import React, { useEffect, useState } from "react";
-import { Table } from "reactstrap";
+import React, { useEffect, useState, useRef } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Table, Spinner } from "reactstrap";
+import { fetchproducts } from "./Redux/ProductSlice";
 
 function App() {
-  const [products, setProducts] = useState([]);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [offset, setOffset] = useState(5);
+  const [isLoading, setIsLoading] = useState(false);
+  const loader = useRef(null);
+
+  const dispatch = useDispatch();
+  const products = useSelector((state) => state.product.data);
 
   useEffect(() => {
-    fetchProducts(offset);
-  }, [offset]);
-
+    setIsLoading(true);
+    if (offset <= 50) {
+      dispatch(fetchproducts(offset)).then(() => {
+        setIsLoading(false);
+      });
+    } else {
+      setIsLoading(false);
+    }
+  }, [dispatch, offset]);
   useEffect(() => {
-    setOffset(0);
-    setHasMore(true);
-  }, [products]);
+    const options = {
+      root: null,
+      rootMargin: "20px",
+      threshold: 1.0,
+    };
 
-  const fetchProducts = async (offset) => {
-    try {
-      const response = await fetch(
-        `https://api.escuelajs.co/api/v1/products?offset=${offset}&limit=5`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch products");
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        loadMore();
       }
-      const data = await response.json();
-      setProducts((prevProducts) => [...prevProducts, ...data]);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    }
-  };
+    }, options);
 
-  const handleScroll = (e) => {
-    const bottom =
-      e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
-    if (bottom && hasMore) {
-      const newOffset = offset + 5;
-      setOffset(newOffset);
+    if (loader.current) {
+      observer.observe(loader.current);
     }
+
+    return () => {
+      if (loader.current) {
+        observer.unobserve(loader.current);
+      }
+    };
+  }, []);
+
+  const loadMore = () => {
+    setOffset((prevOffset) => prevOffset + 5);
   };
 
   return (
-    <div
-      style={{
-        padding: "30px",
-        height: "300px",
-        overflowY: "auto",
-      }}
-      onScroll={handleScroll}
-    >
-      <Table>
+    <div>
+      <Table style={{ background: "red" }}>
         <thead>
           <tr>
             <th>#</th>
@@ -66,6 +69,11 @@ function App() {
               <td>{product.description.slice(0, 40)}</td>
             </tr>
           ))}
+          <tr ref={loader}>
+            <td colSpan="4" style={{ textAlign: "center", padding: "50px" }}>
+              {isLoading && <Spinner color="primary" />}
+            </td>
+          </tr>
         </tbody>
       </Table>
     </div>
